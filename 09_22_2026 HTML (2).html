@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Web OS</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      color: white;
+      background: linear-gradient(135deg, #1d2671, #c33764);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .desktop {
+      height: 100vh;
+      position: relative;
+      padding: 30px;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .apps-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 25px;
+      padding-top: 80px;
+    }
+
+    .app {
+      width: 90px;
+      text-align: center;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+
+    .app:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .app img {
+      width: 55px;
+      height: 55px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .app-name {
+      word-break: break-word;
+      font-size: 13px;
+    }
+
+    .empty-message {
+      width: 100%;
+      text-align: center;
+      margin-top: 150px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 18px;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      width: 430px;
+      max-width: 92%;
+      background: #222;
+      padding: 27px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    .app-settings {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 15px;
+      align-items: start;
+    }
+
+    .app-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-top: 92px;
+    }
+
+    .modal input {
+      width: 100%;
+      height: 42px;
+      padding: 12px;
+      border: none;
+      border-radius: 7px;
+      font-size: 14px;
+    }
+
+    .icon-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .icon-preview {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 28px;
+      background: #333;
+    }
+
+    .preview-label {
+      width: 140px;
+      height: 40px;
+      margin-top: 10px;
+      padding: 11px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      border-radius: 7px;
+      background: white;
+      color: #777;
+      font-size: 14px;
+    }
+
+    .icon-url-input {
+      grid-column: 1 / 3;
+      margin-top: -5px;
+    }
+
+    .add-button {
+      margin-top: 15px;
+      background: #3478f6;
+    }
+
+    #wallpaperUrl {
+      margin-top: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .cancel-button {
+      background: #555;
+    }
+
+    .wallpaper-button {
+      background: #8e44ad;
+    }
+
+    .reset-button {
+      background: #c0392b;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="desktop">
+    <div class="top-bar">
+      <button id="settingsButton">⚙ Settings</button>
+    </div>
+
+    <section id="appsContainer" class="apps-container"></section>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <h2>Settings</h2>
+
+      <div class="app-settings">
+        <div class="app-inputs">
+          <input
+            id="appUrl"
+            type="url"
+            placeholder="App URL, e.g. https://example.com"
+          />
+
+          <input
+            id="appName"
+            type="text"
+            placeholder="App name"
+          />
+        </div>
+
+        <div class="icon-section">
+          <img
+            id="iconPreview"
+            class="icon-preview"
+            src="https://via.placeholder.com/140"
+            alt="Icon preview"
+          />
+
+          <div id="previewLabel" class="preview-label">
+            Icon
+          </div>
+        </div>
+
+        <input
+          id="iconUrl"
+          class="icon-url-input"
+          type="url"
+          placeholder="Icon URL"
+        />
+      </div>
+
+      <button id="addButton" class="add-button">
+        Add App
+      </button>
+
+      <input
+        id="wallpaperUrl"
+        type="url"
+        placeholder="Custom wallpaper URL"
+      />
+
+      <div class="modal-actions">
+        <button id="wallpaperButton" class="wallpaper-button">
+          Set Wallpaper
+        </button>
+
+        <button id="resetWallpaperButton" class="reset-button">
+          Reset Wallpaper
+        </button>
+
+        <button id="cancelButton" class="cancel-button">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const settingsButton =
+      document.getElementById("settingsButton");
+
+    const modalBackdrop =
+      document.getElementById("modalBackdrop");
+
+    const cancelButton =
+      document.getElementById("cancelButton");
+
+    const addButton =
+      document.getElementById("addButton");
+
+    const wallpaperButton =
+      document.getElementById("wallpaperButton");
+
+    const resetWallpaperButton =
+      document.getElementById("resetWallpaperButton");
+
+    const appNameInput =
+      document.getElementById("appName");
+
+    const appUrlInput =
+      document.getElementById("appUrl");
+
+    const iconUrlInput =
+      document.getElementById("iconUrl");
+
+    const wallpaperUrlInput =
+      document.getElementById("wallpaperUrl");
+
+    const iconPreview =
+      document.getElementById("iconPreview");
+
+    const previewLabel =
+      document.getElementById("previewLabel");
+
+    const appsContainer =
+      document.getElementById("appsContainer");
+
+    let apps =
+      JSON.parse(localStorage.getItem("webOSApps")) || [];
+
+    function saveApps() {
+      localStorage.setItem(
+        "webOSApps",
+        JSON.stringify(apps)
+      );
+    }
+
+    function renderApps() {
+      appsContainer.innerHTML = "";
+
+      if (apps.length === 0) {
+        const emptyMessage =
+          document.createElement("div");
+
+        emptyMessage.className = "empty-message";
+        emptyMessage.textContent = "No apps installed";
+
+        appsContainer.appendChild(emptyMessage);
+        return;
+      }
+
+      apps.forEach((app) => {
+        const appElement =
+          document.createElement("div");
+
+        appElement.className = "app";
+
+        const image =
+          document.createElement("img");
+
+        image.src = app.icon;
+        image.alt = `${app.name} icon`;
+
+        image.onerror = () => {
+          image.src =
+            "https://via.placeholder.com/55";
+        };
+
+        const name =
+          document.createElement("div");
+
+        name.className = "app-name";
+        name.textContent = app.name;
+
+        appElement.appendChild(image);
+        appElement.appendChild(name);
+
+        appElement.addEventListener("click", () => {
+          window.open(app.url, "_blank");
+        });
+
+        appsContainer.appendChild(appElement);
+      });
+    }
+
+    function loadWallpaper() {
+      const savedWallpaper =
+        localStorage.getItem("webOSWallpaper");
+
+      if (savedWallpaper) {
+        document.body.style.backgroundImage =
+          `url("${savedWallpaper}")`;
+      } else {
+        document.body.style.backgroundImage =
+          "linear-gradient(135deg, #1d2671, #c33764)";
+      }
+    }
+
+    function openModal() {
+      modalBackdrop.style.display = "flex";
+    }
+
+    function closeModal() {
+      modalBackdrop.style.display = "none";
+
+      appNameInput.value = "";
+      appUrlInput.value = "";
+      iconUrlInput.value = "";
+      wallpaperUrlInput.value = "";
+
+      iconPreview.src =
+        "https://via.placeholder.com/140";
+
+      previewLabel.textContent = "Icon";
+    }
+
+    settingsButton.addEventListener("click", openModal);
+    cancelButton.addEventListener("click", closeModal);
+
+    modalBackdrop.addEventListener("click", (event) => {
+      if (event.target === modalBackdrop) {
+        closeModal();
+      }
+    });
+
+    appNameInput.addEventListener("input", () => {
+      previewLabel.textContent =
+        appNameInput.value || "Icon";
+    });
+
+    iconUrlInput.addEventListener("input", () => {
+      if (iconUrlInput.value.trim()) {
+        iconPreview.src =
+          iconUrlInput.value.trim();
+      }
+    });
+
+    iconPreview.addEventListener("error", () => {
+      iconPreview.src =
+        "https://via.placeholder.com/140";
+    });
+
+    addButton.addEventListener("click", () => {
+      const name = appNameInput.value.trim();
+      const url = appUrlInput.value.trim();
+      const icon = iconUrlInput.value.trim();
+
+      if (!name || !url || !icon) {
+        alert("Please fill in all app fields.");
+        return;
+      }
+
+      try {
+        new URL(url);
+        new URL(icon);
+      } catch {
+        alert("Please enter valid URLs.");
+        return;
+      }
+
+      apps.push({
+        name: name,
+        url: url,
+        icon: icon
+      });
+
+      saveApps();
+      renderApps();
+
+      appNameInput.value = "";
+      appUrlInput.value = "";
+      iconUrlInput.value = "";
+
+      iconPreview.src =
+        "https://via.placeholder.com/140";
+
+      previewLabel.textContent = "Icon";
+    });
+
+    wallpaperButton.addEventListener("click", () => {
+      const wallpaperUrl =
+        wallpaperUrlInput.value.trim();
+
+      if (!wallpaperUrl) {
+        alert("Please enter a wallpaper URL.");
+        return;
+      }
+
+      try {
+        new URL(wallpaperUrl);
+      } catch {
+        alert("Please enter a valid wallpaper URL.");
+        return;
+      }
+
+      localStorage.setItem(
+        "webOSWallpaper",
+        wallpaperUrl
+      );
+
+      loadWallpaper();
+      wallpaperUrlInput.value = "";
+    });
+
+    resetWallpaperButton.addEventListener("click", () => {
+      localStorage.removeItem("webOSWallpaper");
+      loadWallpaper();
+    });
+
+    loadWallpaper();
+    renderApps();
+  </script>
+</body>
+</html>

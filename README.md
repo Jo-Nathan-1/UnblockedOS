@@ -1,1 +1,1 @@
-ok, i'm reworking this so it actuallY looks like an operating system.
+ok, i'm reworking this so it actually looks like an operating system.
